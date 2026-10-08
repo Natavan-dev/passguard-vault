@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PassGuard - Cloud Security Vault</title>
+    <!-- CryptoJS Kitabxanası (AES-256 Şifrələməsi Üçün) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; margin: 0; padding: 40px; display: flex; justify-content: center; }
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 100%; max-width: 480px; }
+        h2 { color: #1a73e8; margin-top: 0; }
+        label { font-weight: 600; display: block; margin-top: 15px; margin-bottom: 5px; color: #333; }
+        textarea, input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+        textarea { height: 90px; resize: vertical; }
+        button { width: 100%; background-color: #1a73e8; color: white; border: none; padding: 12px; border-radius: 6px; margin-top: 20px; font-weight: bold; cursor: pointer; font-size: 15px; }
+        button:hover { background-color: #1557b0; }
+        .box { background: #e8f0fe; padding: 12px; border-radius: 6px; border-left: 4px solid #1a73e8; margin-top: 15px; word-break: break-all; font-family: monospace; font-size: 13px; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>🔒 PassGuard Cloud Vault</h2>
+    <p style="font-size: 13px; color: #666;">Məlumatlar buluda göndərilməzdən əvvəl brauzerdə AES-256 ilə şifrələnir (E2EE).</p>
+    
+    <label for="secretText">Məxfilik Tələb Edən Qeyd / Parol:</label>
+    <textarea id="secretText" placeholder="Məsələn: Əsas bank kartı PIN kodu və ya məfhum parol..."></textarea>
+    
+    <label for="secretKey">Açar Şifrə (Secret Key):</label>
+    <input type="password" id="secretKey" placeholder="Şifrələmə açarını daxil edin...">
+    
+    <button onclick="encryptAndShow()">AES-256 ilə Şifrələ</button>
+
+    <label>Bulud Bazasına Gedəcək Şifrəli Kod (Ciphertext):</label>
+    <div id="output" class="box">Hələ şifrələnməyib...</div>
+</div>
+
+<script>
+function encryptAndShow() {
+    let text = document.getElementById("secretText").value;
+    let key = document.getElementById("secretKey").value;
+
+    if (!text || !key) {
+        alert("Zəhmət olmasa həm qeydi, həm də açar şifrəni daxil edin!");
+        return;
+    }
+
+    // AES-256 Simmetrik Şifrələməsi
+    let encrypted = CryptoJS.AES.encrypt(text, key).toString();
+    
+    document.getElementById("output").innerText = encrypted;
+}
+</script>
+
+</body>
+</html>
