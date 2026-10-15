@@ -39,17 +39,32 @@
 <script>
 function encryptAndShow() {
     let text = document.getElementById("secretText").value;
-    let key = document.getElementById("secretKey").value;
-
-    if (!text || !key) {
+    let password = document.getElementById("secretKey").value;
+    
+    if (!text || !password) {
         alert("Zəhmət olmasa həm qeydi, həm də açar şifrəni daxil edin!");
         return;
     }
 
-    // AES-256 Simmetrik Şifrələməsi
-    let encrypted = CryptoJS.AES.encrypt(text, key).toString();
-    
-    document.getElementById("output").innerText = encrypted;
+    // 1. Kriptoqrafik gücləndirmə: Təsadüfi Salt (Duzaqlama) generasiyası
+    let salt = CryptoJS.lib.WordArray.random(128 / 8);
+
+    // 2. PBKDF2 vasitəsilə sadə paroldan 256-bitlik güclü açarın törədilməsi (10000 iterasiya)
+    let key = CryptoJS.PBKDF2(password, salt, {
+        keySize: 256 / 32,
+        iterations: 10000
+    });
+
+    // 3. Təsadüfi IV (Initialization Vector) yaradılması
+    let iv = CryptoJS.lib.WordArray.random(128 / 8);
+
+    // 4. AES-256 CBC rejimi ilə şifrələmə əməliyyatı
+    let encrypted = CryptoJS.AES.encrypt(text, key, { iv: iv });
+
+    // Salt, IV və Şifrəli mətni (Ciphertext) birləşdirərək yekun strukturun alınması
+    let finalCiphertext = salt.toString() + ":" + iv.toString() + ":" + encrypted.toString();
+
+    document.getElementById("output").innerText = finalCiphertext;
 }
 </script>
 
