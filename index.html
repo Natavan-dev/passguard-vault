@@ -3,69 +3,193 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PassGuard - Cloud Security Vault</title>
-    <!-- CryptoJS Kitabxanası (AES-256 Şifrələməsi Üçün) -->
+    <title>PassGuard - Advanced Cloud Vault</title>
+    <!-- CryptoJS Kitabxanası -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; margin: 0; padding: 40px; display: flex; justify-content: center; }
-        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 100%; max-width: 480px; }
-        h2 { color: #1a73e8; margin-top: 0; }
-        label { font-weight: 600; display: block; margin-top: 15px; margin-bottom: 5px; color: #333; }
-        textarea, input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
-        textarea { height: 90px; resize: vertical; }
-        button { width: 100%; background-color: #1a73e8; color: white; border: none; padding: 12px; border-radius: 6px; margin-top: 20px; font-weight: bold; cursor: pointer; font-size: 15px; }
-        button:hover { background-color: #1557b0; }
-        .box { background: #e8f0fe; padding: 12px; border-radius: 6px; border-left: 4px solid #1a73e8; margin-top: 15px; word-break: break-all; font-family: monospace; font-size: 13px; }
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+        }
+        body {
+            font-family: 'Inter', 'Segoe UI', Tahoma, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .card {
+            background: var(--card-bg);
+            padding: 35px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 520px;
+            border: 1px solid var(--border-color);
+        }
+        h2 {
+            color: #818cf8;
+            margin-top: 0;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        p { color: var(--text-muted); font-size: 14px; }
+        label { font-weight: 500; display: block; margin-top: 18px; margin-bottom: 6px; font-size: 14px; color: #cbd5e1; }
+        textarea, input, select {
+            width: 100%;
+            padding: 12px 16px;
+            background: #0f172a;
+            border: 1px solid var(--border-color);
+            color: white;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        textarea:focus, input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+        }
+        textarea { height: 100px; resize: vertical; }
+        button {
+            width: 100%;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            margin-top: 24px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 15px;
+            transition: background-color 0.2s;
+        }
+        button:hover { background-color: var(--primary-hover); }
+        .box {
+            background: #0f172a;
+            padding: 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            margin-top: 15px;
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 13px;
+            color: #38bdf8;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+        .role-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            background: #312e81;
+            color: #c7d2fe;
+            margin-bottom: 15px;
+        }
     </style>
 </head>
 <body>
 
 <div class="card">
     <h2>🔒 PassGuard Cloud Vault</h2>
-    <p style="font-size: 13px; color: #666;">Məlumatlar buluda göndərilməzdən əvvəl brauzerdə AES-256 ilə şifrələnir (E2EE).</p>
+    <span class="role-badge" id="userRoleBadge">Rol: Standart İstifadəçi (User)</span>
+    <p>Məlumatlar brauzerdə PBKDF2 + AES-256 ilə şifrələnir və avtomatik Supabase bazasına göndərilir.</p>
     
+    <label for="userRole">Rolunuzu Seçin (RBAC Testi):</label>
+    <select id="userRole" onchange="updateRole()">
+        <option value="user">İstifadəçi (User)</option>
+        <option value="admin">İnzibatçı (Admin)</option>
+    </select>
+
     <label for="secretText">Məxfilik Tələb Edən Qeyd / Parol:</label>
-    <textarea id="secretText" placeholder="Məsələn: Əsas bank kartı PIN kodu və ya məfhum parol..."></textarea>
+    <textarea id="secretText" placeholder="Məsələn: Şəxsi qeydlərim..."></textarea>
     
     <label for="secretKey">Açar Şifrə (Secret Key):</label>
     <input type="password" id="secretKey" placeholder="Şifrələmə açarını daxil edin...">
     
-    <button onclick="encryptAndShow()">AES-256 ilə Şifrələ</button>
-
-    <label>Bulud Bazasına Gedəcək Şifrəli Kod (Ciphertext):</label>
+    <button onclick="encryptAndSaveToSupabase()">Şifrələ və Supabase-ə Göndər</button>
+    
+    <label>Bulud Bazasına Gedən Şifrəli Kod (Ciphertext):</label>
     <div id="output" class="box">Hələ şifrələnməyib...</div>
 </div>
 
 <script>
-function encryptAndShow() {
-    let text = document.getElementById("secretText").value;
-    let password = document.getElementById("secretKey").value;
-    
-    if (!text || !password) {
-        alert("Zəhmət olmasa həm qeydi, həm də açar şifrəni daxil edin!");
-        return;
+    // Supabase Konfiqurasiyası
+    const SUPABASE_URL = 'https://irmldpyecmfxuzypdpnh.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_vrosJqyf8QY-BU27zOF13w_Zw2Yad5d';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    function updateRole() {
+        const role = document.getElementById("userRole").value;
+        const badge = document.getElementById("userRoleBadge");
+        if (role === 'admin') {
+            badge.innerText = "Rol: İnzibatçı (Admin - Tam Səlahiyyət)";
+            badge.style.background = "#831843";
+            badge.style.color = "#fbcfe8";
+        } else {
+            badge.innerText = "Rol: Standart İstifadəçi (User)";
+            badge.style.background = "#312e81";
+            badge.style.color = "#c7d2fe";
+        }
     }
 
-    // 1. Kriptoqrafik gücləndirmə: Təsadüfi Salt (Duzaqlama) generasiyası
-    let salt = CryptoJS.lib.WordArray.random(128 / 8);
+    async function encryptAndSaveToSupabase() {
+        let text = document.getElementById("secretText").value;
+        let password = document.getElementById("secretKey").value;
+        let role = document.getElementById("userRole").value;
 
-    // 2. PBKDF2 vasitəsilə sadə paroldan 256-bitlik güclü açarın törədilməsi (10000 iterasiya)
-    let key = CryptoJS.PBKDF2(password, salt, {
-        keySize: 256 / 32,
-        iterations: 10000
-    });
+        if (!text || !password) {
+            alert("Zəhmət olmasa həm qeydi, həm də açar şifrəni daxil edin!");
+            return;
+        }
 
-    // 3. Təsadüfi IV (Initialization Vector) yaradılması
-    let iv = CryptoJS.lib.WordArray.random(128 / 8);
+        if (role !== 'admin' && role !== 'user') {
+            alert("Səlahiyyətiniz çatmır!");
+            return;
+        }
 
-    // 4. AES-256 CBC rejimi ilə şifrələmə əməliyyatı
-    let encrypted = CryptoJS.AES.encrypt(text, key, { iv: iv });
+        // 1. Kriptoqrafik gücləndirmə (Salt + PBKDF2 + AES-256)
+        let salt = CryptoJS.lib.WordArray.random(128 / 8);
+        let key = CryptoJS.PBKDF2(password, salt, {
+            keySize: 256 / 32,
+            iterations: 10000
+        });
+        let iv = CryptoJS.lib.WordArray.random(128 / 8);
+        let encrypted = CryptoJS.AES.encrypt(text, key, { iv: iv });
+        let finalCiphertext = salt.toString() + ":" + iv.toString() + ":" + encrypted.toString();
 
-    // Salt, IV və Şifrəli mətni (Ciphertext) birləşdirərək yekun strukturun alınması
-    let finalCiphertext = salt.toString() + ":" + iv.toString() + ":" + encrypted.toString();
+        document.getElementById("output").innerText = finalCiphertext;
 
-    document.getElementById("output").innerText = finalCiphertext;
-}
+        // 2. Supabase bazasına avtomatik yazılma
+        const { data, error } = await _supabase
+            .from('vault_data')
+            .insert([{ ciphertext: finalCiphertext }]);
+
+        if (error) {
+            console.error("Xəta baş verdi:", error);
+            alert("Məlumat bazaya yazılarkən xəta baş verdi: " + error.message);
+        } else {
+            alert("Məlumat uğurla şifrələndi və Supabase bazasına avtomatik əlavə olundu!");
+            document.getElementById("secretText").value = "";
+            document.getElementById("secretKey").value = "";
+        }
+    }
 </script>
 
 </body>
